@@ -1,0 +1,20 @@
+{
+  "name": "@Depilacion/env",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./server": "./src/server.ts",
+    "./web": "./src/web.ts"
+  },
+  "dependencies": {
+    "dotenv": "^17.4.2",
+    "zod": "^4.4.3",
+    "@t3-oss/env-core": "^0.13.11"
+  },
+  "devDependencies": {
+    "typescript": "^6.0.3",
+    "@types/node": "^25.6.2",
+    "@Depilacion/config": "*"
+  }
+}

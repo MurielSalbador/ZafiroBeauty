@@ -1,0 +1,29 @@
+{
+  "name": "@Depilacion/auth",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "default": "./src/index.ts"
+    },
+    "./*": {
+      "default": "./src/*.ts"
+    }
+  },
+  "type": "module",
+  "scripts": {},
+  "devDependencies": {
+    "typescript": "^6.0.3",
+    "@Depilacion/config": "*"
+  },
+  "dependencies": {
+    "dotenv": "^17.4.2",
+    "zod": "^4.4.3",
+    "@Depilacion/env": "*",
+    "@Depilacion/db": "*",
+    "better-auth": "^1.6.10",
+    "@better-auth/drizzle-adapter": "^1.6.10",
+    "@polar-sh/better-auth": "^1.8.4",
+    "@polar-sh/sdk": "^0.47.1"
+  }
+}

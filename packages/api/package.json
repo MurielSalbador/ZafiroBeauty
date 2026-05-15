@@ -1,0 +1,33 @@
+{
+  "name": "@Depilacion/api",
+  "exports": {
+    ".": {
+      "default": "./src/index.ts"
+    },
+    "./*": {
+      "default": "./src/*.ts"
+    }
+  },
+  "type": "module",
+  "scripts": {},
+  "devDependencies": {
+    "typescript": "^6.0.3",
+    "@Depilacion/config": "*",
+    "@effect/vitest": "^0.29.0",
+    "vitest": "^4.1.5",
+    "@vitest/ui": "^4.1.5",
+    "@vitest/coverage-v8": "^4.1.5",
+    "jsdom": "^29.1.1"
+  },
+  "dependencies": {
+    "dotenv": "^17.4.2",
+    "zod": "^4.4.3",
+    "@Depilacion/env": "*",
+    "@Depilacion/auth": "*",
+    "@Depilacion/db": "*",
+    "@trpc/server": "^11.17.0",
+    "@trpc/client": "^11.17.0",
+    "effect": "^3.21.2",
+    "@effect/schema": "^0.75.5"
+  }
+}

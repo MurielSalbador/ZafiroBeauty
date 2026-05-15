@@ -1,0 +1,3 @@
+{
+  "extends": "@Depilacion/config/tsconfig.base.json",
+}
