@@ -1,5 +1,5 @@
 import "reflect-metadata";
-import { env } from "@Depilacion/env/server";
+
 import { NestFactory } from "@nestjs/core";
 import { AppModule } from "./app.module";
 import { auth } from "@Depilacion/auth";
