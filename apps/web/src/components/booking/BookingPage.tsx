@@ -7,12 +7,21 @@ import { motion, AnimatePresence } from "motion/react";
 import { useNavigate, Link } from "react-router";
 import { toast } from "sonner";
 
+import { Calendar } from "../Calendar";
+
 export default function BookingPage() {
   const { data: session } = authClient.useSession();
   const navigate = useNavigate();
   const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
+  const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
   const [notes, setNotes] = useState("");
+
+  // Sync blocked days from localStorage for demo
+  const blockedDays = useMemo(() => {
+    const saved = localStorage.getItem('zafiro_blocked_days');
+    return saved ? JSON.parse(saved) : ['2026-05-17', '2026-05-25'];
+  }, []);
 
   const total = useMemo(() => {
     return selectedServices.reduce((acc, id) => {
@@ -30,12 +39,10 @@ export default function BookingPage() {
         return prev.filter((id) => id !== service.id);
       }
 
-      // Logic: If selecting a Combo, clear all Zonas and other Combos (allow only one combo)
       if (isCombo) {
         return [service.id];
       }
 
-      // Logic: If selecting a Zone, clear all Combos
       if (isZone) {
         const filtered = prev.filter((id) => {
           const s = SERVICES.find((item) => item.id === id);
@@ -44,21 +51,172 @@ export default function BookingPage() {
         return [...filtered, service.id];
       }
 
-      // Facial services can be combined with anything? Assuming yes or follow logic.
       return [...prev, service.id];
     });
   };
 
+  const [paymentStep, setPaymentStep] = useState<"idle" | "info" | "receipt">("idle");
+
   const handleConfirm = () => {
     if (!selectedDate) return toast.error("Por favor elegí un día");
+    if (!selectedSlot) return toast.error("Por favor elegí un horario");
     if (selectedServices.length === 0) return toast.error("Seleccioná al menos un servicio");
     
-    // Mock confirmation modal/logic
-    toast.success("¡Turno reservado! Te contactaremos para coordinar la seña.");
+    setPaymentStep("info");
+  };
+
+  const deposit = total * 0.5;
+
+  const handleGoToPayment = () => {
+    window.open("https://link.mercadopago.com.ar/zafirobeautyalvarez", "_blank");
+    setPaymentStep("receipt");
+  };
+
+  const handleSendReceipt = () => {
+    if (!selectedDate || !selectedSlot) return;
+
+    // Persist booking to local storage for demo
+    const year = selectedDate.getFullYear();
+    const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+    const day = String(selectedDate.getDate()).padStart(2, '0');
+    const dateKey = `${year}-${month}-${day}`;
+
+    const newApt = {
+      id: Math.random().toString(36).substring(7),
+      client: (session?.user as any)?.name || "Cliente Invitado",
+      date: dateKey,
+      time: selectedSlot,
+      services: selectedServices.map(id => SERVICES.find(s => s.id === id)?.name || ""),
+      total: total,
+      paid: deposit,
+      status: 'PENDING'
+    };
+
+    const savedApts = localStorage.getItem('zafiro_appointments');
+    const apts = savedApts ? JSON.parse(savedApts) : [
+      { id: "1", client: "Lucía Pérez", date: "2026-05-15", time: "10:00", services: ["Piernas completas + Axilas"], total: 24000, paid: 12000, status: 'PENDING' },
+      { id: "2", client: "Marcos Gómez", date: "2026-05-15", time: "11:00", services: ["Pecho + Abdomen"], total: 24000, paid: 24000, status: 'COMPLETED' },
+      { id: "3", client: "Elena R.", date: "2026-05-16", time: "15:00", services: ["Limpieza facial profunda"], total: 15000, paid: 0, status: 'PENDING' },
+    ];
+    apts.push(newApt);
+    localStorage.setItem('zafiro_appointments', JSON.stringify(apts));
+
+    const savedSlots = localStorage.getItem('zafiro_booked_slots');
+    const slotsObj = savedSlots ? JSON.parse(savedSlots) : {
+      '2026-05-20': ['09:00', '09:30', '10:00', '10:30', '11:00', '11:30', '12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30', '16:00', '16:30', '17:00', '17:30', '18:00', '18:30', '19:00', '19:30', '20:00', '20:30', '21:00']
+    };
+    if (!slotsObj[dateKey]) slotsObj[dateKey] = [];
+    if (!slotsObj[dateKey].includes(selectedSlot)) slotsObj[dateKey].push(selectedSlot);
+    localStorage.setItem('zafiro_booked_slots', JSON.stringify(slotsObj));
+
+    toast.success("¡Turno registrado! Esperando confirmación del pago.");
+    
+    // WhatsApp URL generation
+    const dateStr = selectedDate.toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' });
+    const text = `¡Hola Zafiro Beauty! ✿ Acabo de abonar la seña para mi turno de Depilación Láser.%0A%0A🗓️ Día: ${dateStr}%0A⏰ Horario: ${selectedSlot}%0A💵 Seña abonada: $${deposit.toLocaleString()}%0A%0AAdjunto el comprobante de pago.`;
+    window.open(`https://wa.me/5493417183587?text=${text}`, "_blank");
+    
+    setPaymentStep("idle");
+    // Reset selection after booking
+    setSelectedDate(null);
+    setSelectedSlot(null);
+    setSelectedServices([]);
   };
 
   return (
     <div className="min-h-screen bg-[#fdf6f5] font-sans text-brand-text selection:bg-brand-muted/20">
+      {/* Payment Modal */}
+      <AnimatePresence>
+        {paymentStep !== "idle" && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
+             <motion.div 
+               initial={{ opacity: 0 }}
+               animate={{ opacity: 1 }}
+               exit={{ opacity: 0 }}
+               onClick={() => setPaymentStep("idle")}
+               className="absolute inset-0 bg-brand-dark/40 backdrop-blur-md"
+             />
+             <motion.div 
+               initial={{ opacity: 0, scale: 0.9, y: 20 }}
+               animate={{ opacity: 1, scale: 1, y: 0 }}
+               exit={{ opacity: 0, scale: 0.9, y: 20 }}
+               className="bg-white rounded-[3rem] p-10 max-w-lg w-full shadow-2xl relative z-10 border border-brand-dark/5"
+             >
+                {paymentStep === "info" ? (
+                  <>
+                    <div className="text-center mb-8">
+                       <div className="w-16 h-16 rounded-full bg-brand-muted/10 text-brand-dark flex items-center justify-center mx-auto mb-6">
+                          <Check size={32} />
+                       </div>
+                       <h2 className="font-serif text-3xl italic text-brand-text mb-2">Casi listo...</h2>
+                       <p className="text-brand-muted text-sm leading-relaxed">
+                          Para asegurar tu lugar en nuestra agenda, solicitamos una seña del 50% del total del servicio.
+                       </p>
+                    </div>
+
+                    <div className="bg-[#fdf6f5] rounded-3xl p-6 mb-8 space-y-4">
+                       <div className="flex justify-between items-center text-sm">
+                          <span className="text-brand-muted">Total del servicio</span>
+                          <span className="font-bold">$ {total.toLocaleString()}</span>
+                       </div>
+                       <div className="flex justify-between items-center">
+                          <span className="text-xs font-bold uppercase tracking-widest text-brand-dark">Seña requerida (50%)</span>
+                          <span className="text-2xl font-serif text-brand-dark italic font-bold">$ {deposit.toLocaleString()}</span>
+                       </div>
+                    </div>
+
+                    <div className="space-y-3">
+                       <button 
+                         onClick={handleGoToPayment}
+                         className="w-full bg-[#009EE3] text-white py-4 rounded-full text-[10px] font-bold uppercase tracking-widest hover:bg-[#008ACA] transition-all shadow-lg flex items-center justify-center gap-2"
+                       >
+                         Pagar con MercadoPago
+                       </button>
+                       <button 
+                         onClick={() => setPaymentStep("idle")}
+                         className="w-full py-4 rounded-full text-[10px] font-bold uppercase tracking-widest text-brand-muted hover:text-brand-dark transition-all"
+                       >
+                         Volver y revisar
+                       </button>
+                    </div>
+
+                    <p className="text-[9px] text-center text-brand-muted/60 mt-8 leading-relaxed">
+                       Al hacer clic, serás redirigido a nuestra plataforma de pago segura. El saldo restante se abonará el día del turno.
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <div className="text-center mb-8">
+                       <div className="w-16 h-16 rounded-full bg-[#25D366]/10 text-[#25D366] flex items-center justify-center mx-auto mb-6">
+                          <Check size={32} />
+                       </div>
+                       <h2 className="font-serif text-3xl italic text-brand-text mb-2">Último paso</h2>
+                       <p className="text-brand-muted text-sm leading-relaxed">
+                          Una vez realizado el pago en MercadoPago, por favor envianos el comprobante por WhatsApp para confirmar tu turno definitivamente.
+                       </p>
+                    </div>
+
+                    <div className="space-y-3">
+                       <button 
+                         onClick={handleSendReceipt}
+                         className="w-full bg-[#25D366] text-white py-4 rounded-full text-[10px] font-bold uppercase tracking-widest hover:bg-[#1EBE5D] transition-all shadow-lg flex items-center justify-center gap-2"
+                       >
+                         Enviar comprobante por WhatsApp
+                       </button>
+                       <button 
+                         onClick={() => setPaymentStep("idle")}
+                         className="w-full py-4 rounded-full text-[10px] font-bold uppercase tracking-widest text-brand-muted hover:text-brand-dark transition-all"
+                       >
+                         Cerrar
+                       </button>
+                    </div>
+                  </>
+                )}
+             </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
       {/* Mini Header */}
       <header className="px-8 py-6 flex justify-between items-center bg-white/50 backdrop-blur-sm sticky top-0 z-50">
         <Link to="/" className="flex items-center gap-2">
@@ -88,53 +246,13 @@ export default function BookingPage() {
         <div className="grid lg:grid-cols-[1fr_400px] gap-8 items-start">
           
           {/* Columna Calendario */}
-          <div className="bg-white rounded-[2.5rem] p-10 shadow-xl shadow-brand-dark/5 min-h-[500px]">
-             <div className="flex justify-between items-center mb-10 px-4">
-                <button className="p-2 hover:bg-brand-light/10 rounded-full transition-colors"><ChevronLeft size={20}/></button>
-                <h2 className="font-serif text-xl italic text-brand-text">Mayo De 2026</h2>
-                <button className="p-2 hover:bg-brand-light/10 rounded-full transition-colors"><ChevronRight size={20}/></button>
-             </div>
-
-             <div className="grid grid-cols-7 gap-2 text-center mb-6">
-                {['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'].map(d => (
-                  <span key={d} className="text-[10px] uppercase tracking-widest text-brand-muted font-bold py-2">{d}</span>
-                ))}
-                {/* Simplified Calendar Grid for Demo */}
-                {Array.from({length: 31}, (_, i) => i + 1).map(day => {
-                  const isAvailable = day > 14;
-                  const isToday = day === 15;
-                  return (
-                    <button 
-                      key={day}
-                      disabled={!isAvailable}
-                      onClick={() => setSelectedDate(new Date(2026, 4, day))}
-                      className={`
-                        aspect-square flex items-center justify-center rounded-2xl text-sm font-medium transition-all relative
-                        ${!isAvailable ? 'text-brand-muted/20 cursor-not-allowed' : 'text-brand-text hover:bg-brand-muted/10'}
-                        ${selectedDate?.getDate() === day ? 'bg-brand-dark text-white shadow-lg' : ''}
-                        ${isToday ? 'border border-brand-dark/20' : ''}
-                      `}
-                    >
-                      {day}
-                      {isAvailable && (
-                        <span className={`absolute bottom-2 w-1 h-1 rounded-full ${day % 5 === 0 ? 'bg-red-400' : day % 3 === 0 ? 'bg-yellow-400' : 'bg-green-400'}`}></span>
-                      )}
-                    </button>
-                  )
-                })}
-             </div>
-             
-             {/* Time Slots Mockup */}
-             <div className="mt-12 pt-8 border-t border-brand-dark/5">
-                <p className="text-[10px] uppercase tracking-widest text-brand-muted mb-6 font-bold">Horarios disponibles</p>
-                <div className="flex flex-wrap gap-3">
-                   {['09:00', '10:00', '11:00', '14:00', '15:00', '16:00', '17:00'].map(t => (
-                     <button key={t} className="px-6 py-2.5 rounded-full border border-brand-dark/10 text-xs font-medium hover:bg-brand-dark hover:text-white transition-all">
-                       {t}
-                     </button>
-                   ))}
-                </div>
-             </div>
+          <div className="min-h-[600px]">
+             <Calendar 
+                isAdmin={false}
+                blockedDays={blockedDays}
+                onDateSelect={setSelectedDate}
+                onSlotSelect={setSelectedSlot}
+             />
           </div>
 
           {/* Columna Servicios */}

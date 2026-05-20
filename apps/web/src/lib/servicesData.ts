@@ -7,6 +7,7 @@ export type Service = {
 
 export const SERVICES: Service[] = [
   // COMBOS
+  { id: "test1", name: "TEST - Servicio de Prueba", price: 0.2, category: "COMBOS" },
   { id: "c1", name: "Bozo + Mentón", price: 13000, category: "COMBOS" },
   { id: "c2", name: "Rostro completo", price: 17000, category: "COMBOS" },
   { id: "c3", name: "Cavado completo + Axilas + Brazos", price: 24000, category: "COMBOS" },

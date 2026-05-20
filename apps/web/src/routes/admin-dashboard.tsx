@@ -12,19 +12,28 @@ type Appointment = {
   services: string[];
   total: number;
   paid: number;
-  status: 'PENDING' | 'COMPLETED' | 'NO_SHOW' | 'PAYMENT_PENDING';
+  status: 'PENDING' | 'COMPLETED' | 'NO_SHOW';
 };
 
 const MOCK_APPOINTMENTS: Appointment[] = [
   { id: "1", client: "Lucía Pérez", date: "2026-05-15", time: "10:00", services: ["Piernas completas + Axilas"], total: 24000, paid: 12000, status: 'PENDING' },
   { id: "2", client: "Marcos Gómez", date: "2026-05-15", time: "11:00", services: ["Pecho + Abdomen"], total: 24000, paid: 24000, status: 'COMPLETED' },
-  { id: "3", client: "Elena R.", date: "2026-05-16", time: "15:00", services: ["Limpieza facial profunda"], total: 15000, paid: 0, status: 'PAYMENT_PENDING' },
+  { id: "3", client: "Elena R.", date: "2026-05-16", time: "15:00", services: ["Limpieza facial profunda"], total: 15000, paid: 0, status: 'PENDING' },
 ];
+
+import { Calendar } from "@/components/Calendar";
 
 export default function AdminDashboard() {
   const { data: session, isPending } = authClient.useSession();
   const navigate = useNavigate();
-  const [appointments, setAppointments] = useState(MOCK_APPOINTMENTS);
+  const [appointments, setAppointments] = useState<Appointment[]>(() => {
+    const saved = localStorage.getItem('zafiro_appointments');
+    return saved ? JSON.parse(saved) : MOCK_APPOINTMENTS;
+  });
+  const [blockedDays, setBlockedDays] = useState<string[]>(() => {
+    const saved = localStorage.getItem('zafiro_blocked_days');
+    return saved ? JSON.parse(saved) : ['2026-05-17', '2026-05-25'];
+  });
 
   useEffect(() => {
     if (!isPending && (!session || (session.user as any).role !== 'ADMIN')) {
@@ -32,6 +41,19 @@ export default function AdminDashboard() {
       toast.error("Acceso denegado. Se requiere cuenta de Admin.");
     }
   }, [session, isPending, navigate]);
+
+  const toggleBlock = (date: string) => {
+    let newBlocked;
+    if (blockedDays.includes(date)) {
+      newBlocked = blockedDays.filter(d => d !== date);
+      toast.success("Día habilitado");
+    } else {
+      newBlocked = [...blockedDays, date];
+      toast.warning("Día bloqueado");
+    }
+    setBlockedDays(newBlocked);
+    localStorage.setItem('zafiro_blocked_days', JSON.stringify(newBlocked));
+  };
 
   if (isPending) return <div className="min-h-screen bg-[#fdf6f5] flex items-center justify-center">Cargando...</div>;
 
@@ -49,8 +71,8 @@ export default function AdminDashboard() {
         
         <nav className="flex flex-col gap-4 text-xs font-bold uppercase tracking-widest text-white/60">
            <Link to="/admin" className="text-white flex items-center gap-3"><CalendarIcon size={16}/> Turnos</Link>
-           <Link to="/admin/horarios" className="hover:text-white flex items-center gap-3 transition-colors"><Clock size={16}/> Horarios</Link>
-           <Link to="/admin/clientes" className="hover:text-white flex items-center gap-3 transition-colors"><Users size={16}/> Clientes</Link>
+           <a href="#horarios" className="hover:text-white flex items-center gap-3 transition-colors"><Clock size={16}/> Horarios</a>
+           <a href="#clientes" className="hover:text-white flex items-center gap-3 transition-colors"><Users size={16}/> Clientes</a>
            <Link to="/dashboard" className="hover:text-white flex items-center gap-3 transition-colors mt-10"><Edit2 size={16}/> Ver como Cliente</Link>
         </nav>
 
@@ -59,9 +81,9 @@ export default function AdminDashboard() {
             await authClient.signOut();
             navigate("/");
           }}
-          className="mt-auto text-xs font-bold uppercase tracking-widest text-red-300 hover:text-red-100 transition-colors"
+          className="mt-auto text-xs font-bold uppercase tracking-widest text-red-300 hover:text-red-100 transition-colors flex items-center gap-2"
         >
-          Cerrar Sesión
+          <XCircle size={16}/> Cerrar Sesión
         </button>
       </aside>
 
@@ -69,8 +91,17 @@ export default function AdminDashboard() {
       <main className="flex-1 p-12 overflow-y-auto">
         <header className="mb-12 flex justify-between items-end">
            <div>
-              <h1 className="font-serif text-4xl italic text-brand-text mb-2">Panel de Control</h1>
-              <p className="text-brand-muted text-sm tracking-wide">Gestioná tus turnos y disponibilidad diaria.</p>
+              <div className="flex items-center gap-4 mb-2">
+                <button 
+                  onClick={() => navigate("/")}
+                  className="w-10 h-10 rounded-full bg-white border border-brand-dark/10 flex items-center justify-center text-brand-dark hover:bg-brand-dark hover:text-white transition-all shadow-sm"
+                  title="Volver al Inicio"
+                >
+                  <XCircle size={20}/>
+                </button>
+                <h1 className="font-serif text-4xl italic text-brand-text">Panel de Control</h1>
+              </div>
+              <p className="text-brand-muted text-sm tracking-wide ml-14">Gestioná tus turnos y disponibilidad diaria.</p>
            </div>
            
            <div className="flex gap-4">
@@ -92,7 +123,7 @@ export default function AdminDashboard() {
         </header>
 
         {/* Turnos Table */}
-        <section className="bg-white rounded-[2.5rem] p-10 shadow-xl shadow-brand-dark/5 border border-brand-dark/5">
+        <section id="clientes" className="bg-white rounded-[2.5rem] p-10 shadow-xl shadow-brand-dark/5 border border-brand-dark/5">
            <div className="flex justify-between items-center mb-8">
               <h2 className="font-serif text-2xl italic text-brand-text">Próximos Turnos</h2>
               <div className="flex gap-2">
@@ -131,8 +162,31 @@ export default function AdminDashboard() {
                        </td>
                        <td className="py-6 px-2">
                           <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                             <button className="p-2 hover:bg-brand-muted/10 rounded-full text-brand-muted"><Edit2 size={14}/></button>
-                             <button className="p-2 hover:bg-red-50 rounded-full text-red-400"><Trash2 size={14}/></button>
+                             <button 
+                               onClick={() => {
+                                 const newStatus: "PENDING" | "COMPLETED" | "NO_SHOW" = apt.status === 'PENDING' ? 'COMPLETED' : 'PENDING';
+                                 const newAppointments = appointments.map(a => a.id === apt.id ? {...a, status: newStatus} : a);
+                                 setAppointments(newAppointments);
+                                 localStorage.setItem('zafiro_appointments', JSON.stringify(newAppointments));
+                                 toast.success("Estado actualizado");
+                               }}
+                               className="p-2 hover:bg-brand-muted/10 rounded-full text-brand-muted"
+                               title="Cambiar Estado"
+                             >
+                               <CheckCircle size={14}/>
+                             </button>
+                             <button 
+                               onClick={() => {
+                                 const newAppointments = appointments.filter(a => a.id !== apt.id);
+                                 setAppointments(newAppointments);
+                                 localStorage.setItem('zafiro_appointments', JSON.stringify(newAppointments));
+                                 toast.success("Turno eliminado");
+                               }}
+                               className="p-2 hover:bg-red-50 rounded-full text-red-400"
+                               title="Eliminar"
+                             >
+                               <Trash2 size={14}/>
+                             </button>
                           </div>
                        </td>
                     </tr>
@@ -141,38 +195,54 @@ export default function AdminDashboard() {
            </table>
         </section>
 
-        {/* Schedule Management Section */}
-        <section className="mt-12 grid md:grid-cols-2 gap-8">
-           <div className="bg-white rounded-[2.5rem] p-10 shadow-xl shadow-brand-dark/5 border border-brand-dark/5">
-              <h2 className="font-serif text-2xl italic text-brand-text mb-6">Gestionar Calendario</h2>
-              <p className="text-xs text-brand-muted mb-8 leading-relaxed">
-                 Bloqueá días completos para vacaciones, feriados o motivos personales.
-              </p>
-              
-              <div className="space-y-4">
-                 <div className="flex items-center justify-between p-4 bg-[#fdf6f5] rounded-2xl">
-                    <span className="text-sm font-medium">Lunes 25 de Mayo</span>
-                    <button className="text-[10px] font-bold uppercase tracking-widest text-brand-muted hover:text-brand-dark transition-colors">Habilitar</button>
-                 </div>
-                 <div className="flex items-center justify-between p-4 bg-[#fdf6f5] rounded-2xl">
-                    <span className="text-sm font-medium text-red-400 font-bold">Bloquear nuevo día...</span>
-                    <button className="bg-brand-dark text-white w-8 h-8 rounded-full flex items-center justify-center">+</button>
-                 </div>
-              </div>
+        {/* Unified Schedule Management */}
+        <section id="horarios" className="mt-12">
+           <div className="mb-8">
+              <h2 className="font-serif text-3xl italic text-brand-text">Gestión de Horarios y Días</h2>
+              <p className="text-brand-muted text-sm mt-2">Hacé clic en un día para bloquearlo o ajustar su horario de atención.</p>
            </div>
+           
+           <div className="grid lg:grid-cols-3 gap-8">
+              <div className="lg:col-span-2">
+                 <Calendar 
+                    isAdmin={true} 
+                    blockedDays={blockedDays} 
+                    onToggleBlock={toggleBlock} 
+                 />
+              </div>
+              
+              <div className="space-y-6">
+                 <div className="bg-white rounded-[2.5rem] p-8 shadow-xl shadow-brand-dark/5 border border-brand-dark/5">
+                    <h3 className="font-serif text-xl italic mb-4">Días Bloqueados</h3>
+                    <div className="space-y-2">
+                       {blockedDays.length === 0 ? (
+                         <p className="text-xs text-brand-muted italic">No hay días bloqueados.</p>
+                       ) : (
+                         blockedDays.map(date => (
+                           <div key={date} className="flex items-center justify-between p-3 bg-rose-50 rounded-2xl border border-rose-100">
+                              <span className="text-xs font-bold text-rose-700">{date}</span>
+                              <button 
+                                onClick={() => toggleBlock(date)}
+                                className="text-[10px] font-bold uppercase text-rose-400 hover:text-rose-600 transition-colors"
+                              >
+                                Habilitar
+                              </button>
+                           </div>
+                         ))
+                       )}
+                    </div>
+                 </div>
 
-           <div className="bg-white rounded-[2.5rem] p-10 shadow-xl shadow-brand-dark/5 border border-brand-dark/5">
-              <h2 className="font-serif text-2xl italic text-brand-text mb-6">Horarios Base</h2>
-              <div className="space-y-4">
-                 {['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'].map(day => (
-                   <div key={day} className="flex items-center justify-between py-3 border-b border-brand-dark/5 last:border-0">
-                      <span className="text-sm font-medium">{day}</span>
-                      <div className="flex gap-4 text-xs text-brand-muted">
-                         <span>09:00 - 18:00</span>
-                         <button className="text-brand-dark font-bold hover:underline">Editar</button>
-                      </div>
-                   </div>
-                 ))}
+                 <div className="bg-brand-dark text-white rounded-[2.5rem] p-8 shadow-xl shadow-brand-dark/10">
+                    <h3 className="font-serif text-xl italic mb-4">Aviso Rápido</h3>
+                    <p className="text-xs text-white/70 leading-relaxed mb-6">
+                       Cualquier cambio realizado en este calendario se aplicará inmediatamente a lo que ven los clientes.
+                    </p>
+                    <div className="flex items-center gap-3 p-4 bg-white/10 rounded-2xl border border-white/5">
+                       <Clock size={16} className="text-brand-muted" />
+                       <span className="text-[10px] font-bold uppercase tracking-widest">Atención: 09:00 - 22:00</span>
+                    </div>
+                 </div>
               </div>
            </div>
         </section>
