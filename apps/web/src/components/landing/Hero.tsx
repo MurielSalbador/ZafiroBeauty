@@ -2,6 +2,9 @@ import { Lock, Clock, Calendar as CalendarIcon } from "lucide-react";
 import logo from "../../public/logo-dai.png";
 import { useEffect, useState, useRef } from "react";
 import { motion, useMotionValue, useSpring, useTransform, AnimatePresence, useInView, animate } from "framer-motion";
+import { Link } from "react-router";
+
+const MotionLink = motion(Link);
 
 type Appointment = {
   id: string;
@@ -298,15 +301,15 @@ export function Hero() {
             </AnimatePresence>
 
             <motion.div className="flex flex-col sm:flex-row items-center gap-4" variants={itemVariants}>
-              <motion.a
-                href="#reserva"
+              <MotionLink
+                to="/login"
                 className="w-full sm:w-auto bg-brand-dark text-white px-8 py-3.5 rounded-full flex items-center justify-center gap-2 font-sans text-xs tracking-wider font-medium relative overflow-hidden"
                 whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}
               >
                 <motion.span className="absolute inset-0 bg-white/10" initial={{ x: "-100%" }} whileHover={{ x: "100%" }} transition={{ duration: 0.5 }} />
                 <Lock size={14} className="opacity-80 relative z-10" />
                 <span className="relative z-10">RESERVÁ TU TURNO</span>
-              </motion.a>
+              </MotionLink>
               <motion.a
                 href="#precios"
                 className="w-full sm:w-auto bg-transparent border border-brand-dark/30 text-brand-dark px-8 py-3.5 rounded-full flex items-center justify-center font-sans text-xs tracking-wider font-medium"
