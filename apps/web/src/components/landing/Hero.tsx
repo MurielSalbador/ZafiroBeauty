@@ -324,10 +324,10 @@ export function Hero() {
           <motion.div className="hidden lg:flex justify-center relative" initial={{ opacity: 0, scale: 0.85 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 1, delay: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}>
             <motion.div className="absolute w-[520px] h-[520px] rounded-full" style={{ background: "radial-gradient(circle, #fadcd960 0%, #e8bdcc20 50%, transparent 70%)" }} animate={{ scale: [1, 1.08, 1], opacity: [0.6, 1, 0.6] }} transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }} />
             <motion.div className="absolute w-[460px] h-[460px] rounded-full border border-[#e8bdcc]/30" animate={{ rotate: 360 }} transition={{ duration: 20, repeat: Infinity, ease: "linear" }} style={{ borderStyle: "dashed" }} />
-            <motion.div className="w-[420px] h-[420px] rounded-full bg-white/50 shadow-xl shadow-brand-dark/5 backdrop-blur-sm p-6 relative flex items-center justify-center border border-white/70" style={{ rotateX: logoRotateX, rotateY: logoRotateY, transformPerspective: 800 }}>
+            <motion.div className="w-[420px] h-[420px] rounded-full bg-white/50 shadow-xl shadow-brand-dark/5 backdrop-blur-sm p-3.5 relative flex items-center justify-center border border-white/70" style={{ rotateX: logoRotateX, rotateY: logoRotateY, transformPerspective: 800 }}>
               <ShimmerRing />
               <div className="w-full h-full rounded-full overflow-hidden border border-brand-dark/5 bg-[#fdf6f5] flex items-center justify-center relative z-10">
-                <motion.img src={logo} alt="Zafiro Beauty" className="w-[85%] h-[85%] object-contain" animate={{ scale: [1, 1.03, 1] }} transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }} />
+                <motion.img src={logo} alt="Zafiro Beauty" className="w-[105%] h-[105%] max-w-none object-cover" animate={{ scale: [1, 1.03, 1] }} transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }} />
               </div>
             </motion.div>
             {[{ x: -180, y: -60, size: 12, color: "#fadcd9", delay: 0 }, { x: 190, y: 80, size: 8, color: "#e8bdcc", delay: 1 }, { x: -140, y: 150, size: 10, color: "#d4a0b0", delay: 2 }, { x: 160, y: -120, size: 6, color: "#fadcd9", delay: 0.5 }, { x: 0, y: -210, size: 14, color: "#e8bdcc", delay: 1.5 }].map((orb, i) => (
