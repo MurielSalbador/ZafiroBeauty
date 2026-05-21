@@ -2,15 +2,56 @@ import { useState } from "react";
 import { Shield, Sparkles, Droplet, Heart, CheckCircle2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
+// Componente de ítem de precio — responsivo y sin overflow
+function PriceItem({
+  name,
+  price,
+  delay = 0,
+  directionX = 0,
+  prefix,
+  badge,
+}: {
+  name: string;
+  price: string;
+  delay?: number;
+  directionX?: number;
+  prefix?: React.ReactNode;
+  badge?: boolean;
+}) {
+  return (
+    <motion.li
+      className="flex items-center justify-between gap-3 py-2 border-b border-brand-muted/10 last:border-0"
+      initial={{ opacity: 0, x: directionX }}
+      whileInView={{ opacity: 1, x: 0 }}
+      viewport={{ once: true }}
+      transition={{ delay, duration: 0.4 }}
+    >
+      {/* Nombre — puede wrappear */}
+      <span className="text-xs font-sans text-brand-text/80 font-medium leading-snug flex items-center gap-1.5 min-w-0">
+        {prefix}
+        {name}
+      </span>
+      {/* Precio — nunca se corta */}
+      <span className="flex items-center gap-1.5 shrink-0 ml-2">
+        <span className="text-xs font-sans font-semibold text-brand-text/90 whitespace-nowrap">{price}</span>
+        {badge && (
+          <motion.span
+            className="bg-[#fadcd9] text-brand-dark text-[8px] px-1.5 py-0.5 rounded-sm whitespace-nowrap"
+            animate={{ scale: [1, 1.15, 1] }}
+            transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+          >
+            NUEVO
+          </motion.span>
+        )}
+      </span>
+    </motion.li>
+  );
+}
+
 export function Pricing() {
   const [gender, setGender] = useState<"mujeres" | "varones">("mujeres");
-  const [prevGender, setPrevGender] = useState<"mujeres" | "varones">("mujeres");
 
-  const handleToggle = (next: "mujeres" | "varones") => {
-    setPrevGender(gender);
-    setGender(next);
-  };
-
+  const handleToggle = (next: "mujeres" | "varones") => setGender(next);
   const direction = gender === "mujeres" ? -1 : 1;
 
   return (
@@ -74,17 +115,19 @@ export function Pricing() {
                   ].map((item, i) => (
                     <motion.div
                       key={item.title}
-                      className="bg-white rounded-[20px] p-6 flex justify-between items-center shadow-sm border border-brand-dark/5"
+                      className="bg-white rounded-[20px] p-5 flex justify-between items-center gap-3 shadow-sm border border-brand-dark/5"
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: i * 0.08 }}
                       whileHover={{ y: -3, boxShadow: "0 8px 30px rgba(92,64,51,0.08)" }}
                     >
-                      <div>
-                        <h4 className="font-sans font-medium text-brand-dark text-sm mb-1">{item.title}</h4>
+                      {/* Nombre puede wrappear */}
+                      <div className="min-w-0">
+                        <h4 className="font-sans font-medium text-brand-dark text-sm mb-1 leading-snug">{item.title}</h4>
                         <p className="text-[10px] text-brand-muted">{item.desc}</p>
                       </div>
-                      <div className="bg-[#fadcd9] text-brand-dark font-sans font-semibold text-sm px-4 py-1.5 rounded-full">{item.price}</div>
+                      {/* Precio siempre fijo a la derecha */}
+                      <div className="bg-[#fadcd9] text-brand-dark font-sans font-semibold text-sm px-4 py-1.5 rounded-full shrink-0 whitespace-nowrap">{item.price}</div>
                     </motion.div>
                   ))}
                 </>
@@ -98,17 +141,17 @@ export function Pricing() {
                   ].map((item, i) => (
                     <motion.div
                       key={item.title}
-                      className="bg-white rounded-[20px] p-6 flex justify-between items-center shadow-sm border border-brand-dark/5"
+                      className="bg-white rounded-[20px] p-5 flex justify-between items-center gap-3 shadow-sm border border-brand-dark/5"
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: i * 0.08 }}
                       whileHover={{ y: -3, boxShadow: "0 8px 30px rgba(92,64,51,0.08)" }}
                     >
-                      <div>
-                        <h4 className="font-sans font-medium text-brand-dark text-sm mb-1">{item.title}</h4>
+                      <div className="min-w-0">
+                        <h4 className="font-sans font-medium text-brand-dark text-sm mb-1 leading-snug">{item.title}</h4>
                         <p className="text-[10px] text-brand-muted">{item.desc}</p>
                       </div>
-                      <div className="bg-[#fadcd9] text-brand-dark font-sans font-semibold text-sm px-4 py-1.5 rounded-full">{item.price}</div>
+                      <div className="bg-[#fadcd9] text-brand-dark font-sans font-semibold text-sm px-4 py-1.5 rounded-full shrink-0 whitespace-nowrap">{item.price}</div>
                     </motion.div>
                   ))}
                 </>
@@ -123,7 +166,7 @@ export function Pricing() {
         </div>
       </div>
 
-      {/* BLOQUE 2: Tarifario */}
+      {/* BLOQUE 2: Tarifario Completo */}
       <div className="container mx-auto px-4 mb-32">
         <motion.div
           className="text-center mb-16 flex flex-col items-center"
@@ -137,7 +180,7 @@ export function Pricing() {
             Depilación <span className="italic text-brand-muted">Definitiva</span>
           </h2>
           <p className="font-serif italic text-brand-muted text-sm mb-6">♡ Soprano Titanium ♡</p>
-          <div className="text-[9px] uppercase tracking-[0.2em] text-brand-muted/70 flex gap-4">
+          <div className="text-[9px] uppercase tracking-[0.2em] text-brand-muted/70 flex flex-wrap justify-center gap-3">
             <span>+ RESULTADOS REALES</span>
             <span>+ TECNOLOGÍA PREMIUM</span>
             <span>+ ATENCIÓN PERSONALIZADA</span>
@@ -145,7 +188,8 @@ export function Pricing() {
         </motion.div>
 
         <div className="grid lg:grid-cols-2 gap-8 max-w-5xl mx-auto">
-          {/* Combos Femeninos — entra desde la izquierda */}
+
+          {/* Combos Femeninos */}
           <motion.div
             className="bg-white rounded-[2rem] border border-[#fadcd9]/50 shadow-sm overflow-hidden flex flex-col"
             initial={{ opacity: 0, x: -50 }}
@@ -156,8 +200,8 @@ export function Pricing() {
             <div className="bg-[#e8bdcc] text-white text-center py-4 text-xs font-sans tracking-widest font-medium uppercase">
               ♀ COMBOS FEMENINOS
             </div>
-            <div className="p-8 flex-1 flex flex-col">
-              <ul className="space-y-4 text-xs font-sans text-brand-text/80 font-medium w-full">
+            <div className="p-6 flex-1 flex flex-col">
+              <ul className="w-full mb-auto">
                 {[
                   ["Bozo + Mentón", "$13.000"],
                   ["Rostro completo", "$17.000"],
@@ -170,31 +214,20 @@ export function Pricing() {
                   ["Piernas completas + Axilas + Cavado bikini", "$26.000"],
                   ["Rostro completo + Axilas", "$22.000"],
                 ].map(([name, price], i) => (
-                  <motion.li
-                    key={name}
-                    className="flex items-end w-full"
-                    initial={{ opacity: 0, x: -10 }}
-                    whileInView={{ opacity: 1, x: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ delay: i * 0.05 }}
-                  >
-                    <span className="whitespace-nowrap">{name}</span>
-                    <div className="flex-1 border-b border-dotted border-brand-muted/30 mx-3 mb-1"></div>
-                    <span>{price}</span>
-                  </motion.li>
+                  <PriceItem key={name} name={name} price={price} delay={i * 0.04} directionX={-10} />
                 ))}
               </ul>
-              <div className="mt-auto pt-8">
+              <div className="pt-8">
                 <div className="bg-[#e8bdcc] rounded-2xl p-6 text-center text-white">
                   <p className="text-[10px] uppercase tracking-widest mb-1">CUERPO COMPLETO ✦</p>
                   <p className="font-serif italic text-sm mb-4">Promo especial</p>
-                  <div className="bg-white text-brand-dark text-xl font-serif font-bold py-2 px-8 rounded-full inline-block mx-auto">$ 38.000</div>
+                  <div className="bg-white text-brand-dark text-xl font-serif font-bold py-2 px-8 rounded-full inline-block">$ 38.000</div>
                 </div>
               </div>
             </div>
           </motion.div>
 
-          {/* Combos Masculinos — entra desde la derecha */}
+          {/* Combos Masculinos */}
           <motion.div
             className="bg-white rounded-[2rem] border border-brand-dark/10 shadow-sm overflow-hidden flex flex-col"
             initial={{ opacity: 0, x: 50 }}
@@ -205,8 +238,8 @@ export function Pricing() {
             <div className="bg-brand-dark text-white text-center py-4 text-xs font-sans tracking-widest font-medium uppercase">
               ♂ COMBOS MASCULINOS
             </div>
-            <div className="p-8 flex-1 flex flex-col">
-              <ul className="space-y-4 text-xs font-sans text-brand-text/80 font-medium w-full mb-8">
+            <div className="p-6 flex-1 flex flex-col">
+              <ul className="w-full mb-6">
                 {[
                   ["Piernas completas", "$24.000"],
                   ["Pecho + Abdomen", "$24.000"],
@@ -214,60 +247,51 @@ export function Pricing() {
                   ["Rostro + Axilas", "$16.000"],
                   ["Pecho", "$13.000"],
                 ].map(([name, price], i) => (
-                  <motion.li
+                  <PriceItem
                     key={name}
-                    className="flex items-end w-full"
-                    initial={{ opacity: 0, x: 10 }}
-                    whileInView={{ opacity: 1, x: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ delay: i * 0.05 }}
-                  >
-                    <span className="whitespace-nowrap text-brand-muted"><CheckCircle2 size={12} className="inline mr-1 -mt-1" /> {name}</span>
-                    <div className="flex-1 border-b border-dotted border-brand-muted/30 mx-3 mb-1"></div>
-                    <span>{price}</span>
-                  </motion.li>
+                    name={name}
+                    price={price}
+                    delay={i * 0.04}
+                    directionX={10}
+                    prefix={<CheckCircle2 size={12} className="text-brand-muted shrink-0" />}
+                  />
                 ))}
               </ul>
 
-              <div className="bg-[#fcf8f6] rounded-2xl p-6 mb-6">
-                <div className="text-center text-[9px] uppercase tracking-widest text-brand-muted mb-4">+ NUEVOS COMBOS +</div>
-                <ul className="space-y-3 text-xs font-sans text-brand-text/80 font-medium w-full">
+              <div className="bg-[#fcf8f6] rounded-2xl p-5 mb-4">
+                <div className="text-center text-[9px] uppercase tracking-widest text-brand-muted mb-3">+ NUEVOS COMBOS +</div>
+                <ul className="w-full">
                   {[
                     ["Espalda + Medio brazo", "$22.000"],
                     ["Pecho + Abdomen + Medio brazo", "$26.000"],
                   ].map(([name, price]) => (
-                    <li key={name} className="flex items-end w-full">
-                      <span className="whitespace-nowrap"><span className="text-brand-muted">+</span> {name}</span>
-                      <div className="flex-1 border-b border-dotted border-brand-muted/30 mx-3 mb-1"></div>
-                      <span className="flex items-center gap-2">
-                        {price}
-                        {/* Badge NUEVO pulsante */}
-                        <motion.span
-                          className="bg-[#fadcd9] text-brand-dark text-[8px] px-1.5 py-0.5 rounded-sm"
-                          animate={{ scale: [1, 1.15, 1] }}
-                          transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
-                        >
-                          NUEVO
-                        </motion.span>
-                      </span>
-                    </li>
+                    <PriceItem
+                      key={name}
+                      name={name}
+                      price={price}
+                      directionX={10}
+                      prefix={<span className="text-brand-muted shrink-0">+</span>}
+                      badge
+                    />
                   ))}
                 </ul>
               </div>
 
-              <div className="bg-[#fcf8f6] rounded-2xl p-6 mb-8">
-                <div className="text-center text-[9px] uppercase tracking-widest text-brand-muted mb-4">+ COMBOS MÁS ELEGIDOS +</div>
-                <ul className="space-y-3 text-xs font-sans text-brand-text/80 font-medium w-full">
+              <div className="bg-[#fcf8f6] rounded-2xl p-5 mb-6">
+                <div className="text-center text-[9px] uppercase tracking-widest text-brand-muted mb-3">+ COMBOS MÁS ELEGIDOS +</div>
+                <ul className="w-full">
                   {[
                     ["Espalda + Hombros + Brazos", "$26.000"],
                     ["Pecho + Abdomen + Brazos", "$26.000"],
                     ["Espalda + Brazos + Axilas", "$26.000"],
                   ].map(([name, price]) => (
-                    <li key={name} className="flex items-end w-full">
-                      <span className="whitespace-nowrap"><span className="text-brand-muted">+</span> {name}</span>
-                      <div className="flex-1 border-b border-dotted border-brand-muted/30 mx-3 mb-1"></div>
-                      <span>{price}</span>
-                    </li>
+                    <PriceItem
+                      key={name}
+                      name={name}
+                      price={price}
+                      directionX={10}
+                      prefix={<span className="text-brand-muted shrink-0">+</span>}
+                    />
                   ))}
                 </ul>
               </div>
@@ -275,7 +299,7 @@ export function Pricing() {
               <div className="mt-auto">
                 <div className="bg-brand-dark rounded-2xl p-6 text-center text-white">
                   <p className="text-[10px] uppercase tracking-widest mb-4">CUERPO COMPLETO MASCULINO</p>
-                  <div className="bg-white text-brand-dark text-xl font-serif font-bold py-2 px-8 rounded-full inline-block mx-auto">$ 43.000</div>
+                  <div className="bg-white text-brand-dark text-xl font-serif font-bold py-2 px-8 rounded-full inline-block">$ 43.000</div>
                 </div>
               </div>
             </div>
