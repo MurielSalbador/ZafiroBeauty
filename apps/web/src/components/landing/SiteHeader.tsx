@@ -2,11 +2,15 @@ import { Menu, X } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Link } from "react-router";
 import logo from "../../public/logo-dai.png";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useScroll, useSpring } from "framer-motion";
 
 export function SiteHeader() {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [activeSection, setActiveSection] = useState("inicio");
+
+  const { scrollYProgress } = useScroll();
+  const scaleX = useSpring(scrollYProgress, { stiffness: 200, damping: 30 });
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 30);
@@ -14,12 +18,31 @@ export function SiteHeader() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  // IntersectionObserver para sección activa
+  useEffect(() => {
+    const sections = ["inicio", "servicios", "precios", "cuidados", "contacto"];
+    const observers: IntersectionObserver[] = [];
+
+    sections.forEach((id) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      const obs = new IntersectionObserver(
+        ([entry]) => { if (entry.isIntersecting) setActiveSection(id); },
+        { threshold: 0.3 }
+      );
+      obs.observe(el);
+      observers.push(obs);
+    });
+
+    return () => observers.forEach((o) => o.disconnect());
+  }, []);
+
   const navLinks = [
-    { href: "#inicio", label: "Inicio" },
-    { href: "#servicios", label: "Servicios" },
-    { href: "#precios", label: "Precios" },
-    { href: "#cuidados", label: "Cuidados" },
-    { href: "#contacto", label: "Contacto" },
+    { href: "#inicio", label: "Inicio", id: "inicio" },
+    { href: "#servicios", label: "Servicios", id: "servicios" },
+    { href: "#precios", label: "Precios", id: "precios" },
+    { href: "#cuidados", label: "Cuidados", id: "cuidados" },
+    { href: "#contacto", label: "Contacto", id: "contacto" },
   ];
 
   return (
@@ -33,6 +56,12 @@ export function SiteHeader() {
       animate={{ boxShadow: scrolled ? "0 2px 20px rgba(92,64,51,0.06)" : "0 0 0 rgba(0,0,0,0)" }}
       transition={{ duration: 0.3 }}
     >
+      {/* ── Scroll Progress Bar ── */}
+      <motion.div
+        className="absolute bottom-0 left-0 h-[2px] bg-gradient-to-r from-[#e8bdcc] to-[#c9a0a0] origin-left"
+        style={{ scaleX, width: "100%" }}
+      />
+
       <div className="container mx-auto px-4 h-24 flex items-center justify-between">
 
         {/* Logo */}
@@ -60,25 +89,39 @@ export function SiteHeader() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.1 }}
         >
-          {navLinks.map((link, i) => (
-            <motion.a
-              key={link.href}
-              href={link.href}
-              className="relative hover:text-brand-dark transition-colors group"
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 + i * 0.07 }}
-              whileHover={{ y: -2 }}
-            >
-              {link.label}
-              <motion.span
-                className="absolute -bottom-1 left-0 h-px bg-brand-muted"
-                initial={{ width: 0 }}
-                whileHover={{ width: "100%" }}
-                transition={{ duration: 0.25 }}
-              />
-            </motion.a>
-          ))}
+          {navLinks.map((link, i) => {
+            const isActive = activeSection === link.id;
+            return (
+              <motion.a
+                key={link.href}
+                href={link.href}
+                className="relative hover:text-brand-dark transition-colors group"
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 + i * 0.07 }}
+                whileHover={{ y: -2 }}
+              >
+                {link.label}
+                {/* Indicador de sección activa */}
+                <motion.span
+                  className="absolute -bottom-1 left-0 h-px bg-brand-muted"
+                  animate={{ width: isActive ? "100%" : "0%" }}
+                  transition={{ duration: 0.3 }}
+                />
+                {/* Punto rosado activo */}
+                <AnimatePresence>
+                  {isActive && (
+                    <motion.span
+                      className="absolute -top-2 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-[#e8bdcc]"
+                      initial={{ scale: 0, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      exit={{ scale: 0, opacity: 0 }}
+                    />
+                  )}
+                </AnimatePresence>
+              </motion.a>
+            );
+          })}
         </motion.nav>
 
         {/* Desktop Button */}
@@ -143,6 +186,7 @@ export function SiteHeader() {
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: i * 0.06 }}
+                  className={activeSection === link.id ? "text-brand-dark font-semibold" : ""}
                 >
                   {link.label}
                 </motion.a>
