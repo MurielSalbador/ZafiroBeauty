@@ -1,9 +1,7 @@
 import { Lock, Clock, Calendar as CalendarIcon } from "lucide-react";
 import logo from "../../public/logo-dai.png";
 import { useEffect, useState, useRef } from "react";
-import { motion, useMotionValue, useSpring, useTransform, AnimatePresence } from "framer-motion";
-import CountUp from "react-countup";
-import { useInView } from "react-intersection-observer";
+import { motion, useMotionValue, useSpring, useTransform, AnimatePresence, useInView, animate } from "framer-motion";
 
 type Appointment = {
   id: string;
@@ -82,21 +80,46 @@ function ShimmerRing() {
   );
 }
 
-// ── Contador animado para las estadísticas ──
+// ── Contador animado nativo con Framer Motion ──
+function AnimatedCounter({ from, to, duration = 2.5, prefix = "", suffix = "" }: { from: number; to: number; duration?: number; prefix?: string; suffix?: string }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const isInView = useInView(ref, { once: true, amount: 0.5 });
+  const [count, setCount] = useState(from);
+
+  useEffect(() => {
+    if (isInView) {
+      const controls = animate(from, to, {
+        duration,
+        ease: "easeOut",
+        onUpdate(value) {
+          setCount(Math.round(value));
+        },
+      });
+      return () => controls.stop();
+    }
+  }, [isInView, from, to, duration]);
+
+  return (
+    <span ref={ref}>
+      {prefix}
+      {count}
+      {suffix}
+    </span>
+  );
+}
+
 function AnimatedStat({ value, label, prefix = "", suffix = "" }: { value: number | string; label: string; prefix?: string; suffix?: string }) {
-  const { ref, inView } = useInView({ threshold: 0.5, triggerOnce: true });
   const isNumeric = typeof value === "number";
 
   return (
     <motion.div
-      ref={ref}
       className="flex flex-col"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
     >
       <span className="font-serif text-2xl md:text-3xl mb-1">
-        {isNumeric && inView ? (
-          <CountUp start={0} end={value as number} duration={2.5} prefix={prefix} suffix={suffix} />
+        {isNumeric ? (
+          <AnimatedCounter from={0} to={value as number} prefix={prefix} suffix={suffix} />
         ) : (
           `${prefix}${value}${suffix}`
         )}
